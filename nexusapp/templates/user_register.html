@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus</title>
+    <style>
+        .box 
+        {
+            width:350px;
+            height:350px;
+            top:50%;
+            left:50%;
+            transform:translate(-50%, -50%);
+            position:absolute;
+            background-color:rgb(33, 33, 33);
+            font-family: verdana;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+        }
+
+        .center 
+        {
+            text-align: center;
+        }
+
+        body 
+        {
+            background-color:rgb(84, 21, 84) ;
+        }
+
+        .ip
+        {
+            text-align: center;
+            padding:10px;
+            width:70%;
+            border:none;
+            font-size: 15px;
+        }
+
+        .reg
+        {
+            padding:12px;
+            font-size: 16px;
+            background-color:rgb(84, 21, 84) ;
+            border:none;
+            color:white;
+        }
+
+        .reg:hover
+        {
+            background-color:rgb(40, 2, 40) ;
+            cursor:pointer;
+        }
+
+        .lin 
+        {
+            text-decoration: none;
+            color:white;
+        }
+
+        .lin:hover
+        {
+            color:rgb(222, 19, 222) ;
+
+        }
+    </style>
+
+</head>
+<body>
+    <div class="box">
+        <div class="center">
+            <h1 style="color:white;">User Register</h1>
+            <br>
+            <form action="" method="POST">
+                {% csrf_token %}
+                <input type="email" placeholder="Enter your email" class="ip" name="username">
+                <br>
+                <br>
+                <input type="password" placeholder="Create a password" class="ip" name="passw">
+                <br>
+                <br>
+                <input type="submit" value="Register" class="reg">
+            </form>
+            <br>
+            <br>
+            <a href="{% url 'user_login' %}" class="lin">Already have an account? Login here</a>
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <p class="{% if message.tags %}{{ message.tags }}{% endif %}" style="color:white;">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</body>
+</html>

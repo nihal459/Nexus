@@ -1,0 +1,164 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nexus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* Custom CSS to set list style icon to "#" */
+        ul.text-white {
+          list-style: none;
+          padding-left: 0;
+        }
+        ul.text-white li:before {
+          content: "#";
+          color: white;
+          margin-right: 0.5em;
+        }
+
+        .dirm 
+        {
+          color:white;
+          font-weight:600;
+          text-decoration:none;
+        }
+
+        .dirm:hover 
+        {
+          color:green;
+        }
+    </style>
+  </head>
+  <body class="bg-dark">
+{% if request.user.is_authenticated %}
+
+    <nav class="navbar bg-dark">
+        <div class="container-fluid">
+          <a class="navbar-brand text-white" href="{% url 'index' %}" >
+            <img src="{% static 'connection.png' %}" alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+            Nexus
+          </a>
+          <a class="btn btn-success" data-bs-toggle="offcanvas" href="#offcanvasExample" role="button" aria-controls="offcanvasExample">&#9776;</a>
+          {% comment %} <form class="d-flex p-5" role="search">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success" type="submit">&#128269;</button>
+          </form> {% endcomment %}
+        </div>
+    </nav>
+
+    <hr class="my-1" style="color:white;">
+    <br>
+    <h3 class="m-2 text-white">Welcome, {{request.user}}</h3>
+    <br>
+    <hr class="my-1" style="color:white;">
+
+    <div class="container">
+        <h4 class="my-2 text-white">Channels</h4>
+        <ul class="text-white">
+            <br>
+            <li>Channel 1</li>
+            <br>
+            <li>Channel 2</li>
+            <br>
+            <a href="" style="text-decoration: none; color:white;"><b>+ Add Channel</b></a>
+                    
+        </ul>
+    </div>
+
+    <hr class="my-1" style="color:white;">
+
+    <div class="container">
+      <h4 class="my-2 text-white">Direct Messages</h4>
+      <br>
+      {% for member in members %}
+      {% if member != request.user %}
+      <p class="text-white"><a href="{% url 'chat' member.pk %}" class="dirm"><img src="{{ member.imageURL }}" alt="" height="25px"> {{ member.username }}</a></p>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <hr class="my-1" style="color:white;">
+  
+
+
+
+
+
+      
+      <div class="offcanvas offcanvas-start bg-dark" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title text-white" id="offcanvasExampleLabel">Workspaces</h5>
+          <button type="button" class="btn-close bg-light" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body text-white">
+           
+          {% for workspace in workspace %}
+              <p class="text-white border border-success p-2">
+                  <img src="{% static 'workspace.png' %}" alt="" height="25px">
+                  <span class="text-dark">a</span>{{ workspace.name }}
+                  <span class="text-dark">a</span>
+                  {% if request.user == workspace.admin %}
+                      <a href="{% url 'edit_workspace' workspace.pk %}" class="btn btn-primary">Edit</a>
+                      <a href="{% url 'delete_workspace' workspace.pk %}" class="btn btn-danger">Delete</a>
+                  {% else %}
+                    <a href="{% url 'exit' workspace.pk %}" class="btn btn-danger">Exit</a>
+                  {% endif %}
+              </p>
+              <br>
+          {% endfor %}
+            <hr class="my-1" style="color:white;">
+            <br>
+
+
+            <a href="{% url 'create_workspace' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{% static 'workspace.png' %}" alt="" height="30px"><span class="text-dark">a</span>Create Workspace</a>
+            <br>
+            <br>
+            <br>
+
+            <a href="{% url 'join_workspace' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{% static 'connection.png' %}" alt="" height="30px"><span class="text-dark">a</span>Join Workspace</a>
+            <br>
+            <br>
+            <br>
+
+            <a href="{% url 'my_profile' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{{ request.user.imageURL }}" alt="" height="30px"><span class="text-dark">a</span>My Profile</a>
+            <br>
+            <br>
+            <br>
+
+            <a href="{% url 'signout' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{% static 'switch.png' %}" alt="" height="30px"><span class="text-dark">a</span>Logout</a>
+
+
+        
+        </div>
+      </div>
+
+{% else %}
+<br>
+<div class="container">
+  <div style="text-align:center">
+    <br>
+    <br>
+    <img src="{% static 'connection.png' %}" height="70px">
+    <br>
+    <br>
+    <h1 class="my-2 text-white">Nexus</h1>
+    <h6 class="my-2 text-white">User friendly chat application for your official works</h6>
+    <br>
+    <br>
+    <h4 class="my-2 text-white">You are currently not logged in.</h4>
+    <br>
+    <a href="{% url 'user_login' %}" class="btn btn-success">Login</a>
+
+             
+  </div>
+ 
+</div>
+<br>
+
+{% endif %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  </body>
+</html>
