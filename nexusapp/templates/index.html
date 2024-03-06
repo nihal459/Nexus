@@ -13,6 +13,7 @@
         ul.text-white {
           list-style: none;
           padding-left: 0;
+          font-size:18px;
         }
         ul.text-white li:before {
           content: "#";
@@ -25,6 +26,7 @@
           color:white;
           font-weight:600;
           text-decoration:none;
+          font-size:18px;
         }
 
         .dirm:hover 
@@ -43,36 +45,42 @@
             Nexus
           </a>
           <a class="btn btn-success" data-bs-toggle="offcanvas" href="#offcanvasExample" role="button" aria-controls="offcanvasExample">&#9776;</a>
-          {% comment %} <form class="d-flex p-5" role="search">
+          {% comment %} <form class="d-flex p-3" role="search">
             <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
             <button class="btn btn-outline-success" type="submit">&#128269;</button>
           </form> {% endcomment %}
+          <form method="GET" action="{% url 'search_results' %}" class="d-flex p-3">
+            <input class="form-control me-2" type="text" name="keyword" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success" type="submit">&#128269;</button>
+          </form>
         </div>
     </nav>
 
     <hr class="my-1" style="color:white;">
     <br>
-    <h3 class="m-2 text-white">Welcome, {{request.user}}</h3>
+    <h2 class="m-2 text-white">Welcome, {{request.user}}</h2>
     <br>
+    <a href="{% url 'whiteboard' %}">Whiteboard</a>
     <hr class="my-1" style="color:white;">
 
     <div class="container">
-        <h4 class="my-2 text-white">Channels</h4>
-        <ul class="text-white">
-            <br>
-            <li>Channel 1</li>
-            <br>
-            <li>Channel 2</li>
-            <br>
-            <a href="" style="text-decoration: none; color:white;"><b>+ Add Channel</b></a>
-                    
-        </ul>
+      <h3 class="my-2 text-white">Channels</h3>
+      <br>
+      <ul class="text-white">
+          {% for channel in user_channels %}
+            <li><img src="{{ channel.imageURL }}" height="25px" style="border-radius:50%;"><a href="{% url 'channel_chat' channel.pk %}" class="dirm"> {{ channel.channel_name }}</a></li>
+          {% endfor %}
+
+          <br>
+
+          <li><a href="{% url 'add_channel' %}" class="dirm">+ Add Channel</a></li>
+      </ul>
     </div>
 
     <hr class="my-1" style="color:white;">
 
     <div class="container">
-      <h4 class="my-2 text-white">Direct Messages</h4>
+      <h3 class="my-2 text-white">Direct Messages</h3>
       <br>
       {% for member in members %}
       {% if member != request.user %}

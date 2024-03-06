@@ -1,0 +1,312 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nexus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .chat-container {
+          max-height: 64vh; /* Limit chat container height */
+          overflow-y: auto; /* Enable vertical scrolling */
+      }
+
+      .message {
+          margin-bottom: 15px; /* Add spacing between messages */
+      }
+
+      /* Style for send button */
+      .send-button {
+          background-color: #007bff;
+          border: none;
+          color: white;
+          padding-left:12px;
+          padding-right:12px;
+          padding-top:8px;
+          padding-bottom:8px;
+          border-radius: 50%; 
+          margin-left:-10px; 
+        
+        }
+
+      /* Style for voice button */
+      .voice-button {
+          background-color: rgb(42, 151, 42);
+          border: none;
+          color: white;
+          padding: 10px;
+          border-radius: 50%;
+      }
+
+      .text-button {
+        background-color: rgb(42, 151, 42);
+        border: none;
+        color: white;
+        padding-left:12px;
+        padding-right:12px;
+        padding-top:10px;
+        padding-bottom:10px;        
+        border-radius: 50%;
+        margin-left:-10px; 
+
+    }
+
+      /* Style for file upload button */
+      .file-upload-button {
+          background-color: rgb(42, 151, 42);
+          border: none;
+          color: black;
+          padding-left:15px;
+          padding-right:15px;
+          padding-top:8px;
+          padding-bottom:8px;
+          border-radius: 50%;
+          margin-left:-4px; 
+
+      }
+      /* Style for chat interface */
+      .chat-interface {
+          position: fixed;
+          bottom: 0;
+          width: 100%;
+          /* background-color: #f8f9fa; */
+          background-color: #ced4da;
+          padding: 10px;
+          border-top: 1px solid #ced4da;
+      }
+    </style>
+  </head>
+  <body class="bg-dark">
+{% if request.user.is_authenticated %}
+
+    <nav class="navbar bg-dark">
+        <div class="container-fluid">
+          <a class="navbar-brand text-white" href="{% url 'index' %}" >
+            <img src="{% static 'connection.png' %}" alt="Logo" width="30" height="24" class="d-inline-block align-text-top">
+            Nexus
+          </a>
+          <a class="btn btn-success" data-bs-toggle="offcanvas" href="#offcanvasExample" role="button" aria-controls="offcanvasExample">&#9776;</a>
+
+        </div>
+    </nav>
+
+      <hr class="my-1" style="color:white;">
+      <h4 class="my-1 text-white p-1"><img src="{{ channel.imageURL }}" alt="" height="35px"> <a href="{% url 'channel_details' channel.pk %}" style="text-decoration:none; color:white;">{{ channel.channel_name }}</a></h4>
+  
+      <div class="border border-white">
+          <div class="container-fluid chat-container">
+              {% for message in messages %}
+              <div class="message">
+                  {% if message.sender.username == request.user.username %}
+                      <p class="text-primary">You:</p>
+                  {% else %}
+                      <p class="text-warning">{{ message.sender.username }}:</p>
+                  {% endif %}
+                  {% comment %} <p class="username text-warning">{{ message.sender.username }}:</p> {% endcomment %}
+                  {% if message.image %}
+                  <!-- Display image -->
+                  <img src="{{ message.image.url }}" alt="Image" style="max-width: 200px;">
+                  {% endif %}
+                  {% if message.video %}
+                  <!-- Display video -->
+                  <video controls style="max-width: 200px;">
+                      <source src="{{ message.video.url }}" type="video/mp4">
+                      Your browser does not support the video tag.
+                  </video>
+                  {% endif %}
+                  <p class="text text-white">{{ message.message }}</p>
+              </div>
+              {% endfor %}
+        </div>
+  
+              <div class="chat-interface">
+
+                <form class="row align-items-center" action="{% url 'send_channel_message' %}" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <input type="hidden" name="channel" value="{{ channel.pk }}">
+                  <div class="col-8">
+                    <textarea class="form-control" name="text" id="convert_text" placeholder="Type your message here..." rows="2"></textarea>
+                  </div>
+
+                  <div class="col-2">
+                    <input type="file" name="file" style="display: none;" id="file-upload" accept="image/*, video/*">
+                    <label for="file-upload" class="file-upload-button">
+                        <span style="font-size:22px;">&#128206;<span>
+                    </label>
+                  </div>
+              
+                  <div class="col-2">
+                    <button type="submit" class="send-button"><span style="font-size:20px;">&#10148;<span></button>
+                 </div>
+                </form>
+              
+                <div class="row">
+                  <div class="col-2">
+                    <button type="button" class="voice-button mt-2" id="click_to_record" title="Voice Message">&#127908;</button>                  
+                  </div>
+
+                  <div class="col-3">
+                    <button type="button" class="text-button mt-2" id="click_to_convert" title="Text Conversion">&#128196;</button>
+  
+                  </div>
+
+                  <input type="file" name="extract_file" id="extract-file" style="display: none;" accept="image/*">
+
+
+                </div>
+
+
+
+
+
+              </div>
+  
+          </div>
+      </div>
+  </div>
+  
+  <script>
+      click_to_record.addEventListener('click', function () {
+          var speech = true;
+          window.SpeechRecognition = window.webkitSpeechRecognition;
+  
+          const recognition = new SpeechRecognition();
+          recognition.interimResults = true;
+  
+          recognition.addEventListener('result', e => {
+              const transcript = Array.from(e.results)
+                  .map(result => result[0])
+                  .map(result => result.transcript)
+                  .join('')
+  
+              document.getElementById("convert_text").innerHTML = transcript;
+              console.log(transcript);
+          });
+  
+          if (speech == true) {
+              recognition.start();
+          }
+      })
+  </script>
+  <script src="https://unpkg.com/tesseract.js@v2.0.0-alpha.13/dist/tesseract.min.js"></script>
+
+
+  <script>
+    document.getElementById('click_to_convert').addEventListener('click', function () {
+        // Trigger file upload when "Text Conversion" button is clicked
+        document.getElementById('extract-file').click();
+    });
+
+    // Event listener for file input change
+    document.getElementById('extract-file').addEventListener('change', function () {
+        const file = this.files[0];
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        // Display uploaded image (optional)
+        img.onload = function () {
+            // Display the image somewhere if needed
+        };
+
+        // Perform text extraction
+        const rec = new Tesseract.TesseractWorker();
+        rec.recognize(file)
+            .progress(function (response) {
+                // Handle progress updates if needed
+            })
+            .then(function (data) {
+                // Populate textarea with extracted text
+                document.getElementById('convert_text').value = data.text;
+                // Optionally, you can handle completion here
+            })
+            .finally(() => {
+                // Clean up resources if needed
+                URL.revokeObjectURL(img.src);
+            });
+    });
+</script>
+
+
+
+
+
+
+
+      
+      <div class="offcanvas offcanvas-start bg-dark" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title text-white" id="offcanvasExampleLabel">Workspaces</h5>
+          <button type="button" class="btn-close bg-light" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body text-white">
+           
+          {% for workspace in workspace %}
+              <p class="text-white border border-success p-2">
+                  <img src="{% static 'workspace.png' %}" alt="" height="25px">
+                  <span class="text-dark">a</span>{{ workspace.name }}
+                  <span class="text-dark">a</span>
+                  {% if request.user == workspace.admin %}
+                      <a href="{% url 'edit_workspace' workspace.pk %}" class="btn btn-primary">Edit</a>
+                      <a href="{% url 'delete_workspace' workspace.pk %}" class="btn btn-danger">Delete</a>
+                  {% else %}
+                      <a href="{% url 'exit' workspace.pk %}" class="btn btn-danger">Exit</a>
+                  {% endif %}
+              </p>
+              <br>
+          {% endfor %}
+            <hr class="my-1" style="color:white;">
+            <br>
+
+
+            <a href="{% url 'create_workspace' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{% static 'workspace.png' %}" alt="" height="30px"><span class="text-dark">a</span>Create Workspace</a>
+            <br>
+            <br>
+            <br>
+
+            <a href="{% url 'join_workspace' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{% static 'connection.png' %}" alt="" height="30px"><span class="text-dark">a</span>Join Workspace</a>
+            <br>
+            <br>
+            <br>
+
+            <a href="{% url 'my_profile' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{{ request.user.imageURL }}" alt="" height="30px"><span class="text-dark">a</span>My Profile</a>
+            <br>
+            <br>
+            <br>
+
+            <a href="{% url 'signout' %}" style="text-decoration: none; color:white; font-size:18px;" class="p-2"><img src="{% static 'switch.png' %}" alt="" height="30px"><span class="text-dark">a</span>Logout</a>
+
+
+        
+        </div>
+      </div>
+
+{% else %}
+<br>
+<div class="container">
+  <div style="text-align:center">
+    <br>
+    <br>
+    <img src="{% static 'connection.png' %}" height="70px">
+    <br>
+    <br>
+    <h1 class="my-2 text-white">Nexus</h1>
+    <h6 class="my-2 text-white">User friendly chat application for your official works</h6>
+    <br>
+    <br>
+    <h4 class="my-2 text-white">You are currently not logged in.</h4>
+    <br>
+    <a href="{% url 'user_login' %}" class="btn btn-success">Login</a>
+
+             
+  </div>
+ 
+</div>
+<br>
+
+{% endif %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  </body>
+</html>

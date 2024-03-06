@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whiteboard to Text</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 105vh;
+        }
+        
+        canvas {
+            border: 1px solid #000;
+            touch-action: none; /* Prevents default touch actions like scrolling */
+        }
+        
+        button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: black;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        
+        #output {
+            margin-top: 10px;
+            font-size: 18px;
+            color: black;
+        }
+
+        .reset 
+        {
+            padding:5px;
+            color:white;
+            background-color:orange;
+            text-decoration:none;
+            font-family:17px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="whiteboard" height="550px" width="350%"></canvas>
+    <button id="extractTextButton">Download Drawing </button>
+    <br>
+    <a href="{% url 'whiteboard' %}" class="reset">&#x21bb;</a>
+    <div id="output"></div>
+    <script>
+        const canvas = document.getElementById('whiteboard');
+        const ctx = canvas.getContext('2d');
+        const output = document.getElementById('output');
+        const extractTextButton = document.getElementById('extractTextButton');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawingTouch);
+        canvas.addEventListener('touchmove', drawTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function startDrawingTouch(e) {
+            isDrawing = true;
+            const touch = e.touches[0];
+            [lastX, lastY] = [touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop];
+        }
+
+        function drawTouch(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+            ctx.stroke();
+            [lastX, lastY] = [touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop];
+        }
+
+        extractTextButton.addEventListener('click', () => {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const text = extractTextFromImageData(imageData);
+            output.textContent = text;
+
+            // Save canvas content as an image
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'whiteboard.png';
+            link.click();
+        });
+
+        function extractTextFromImageData(imageData) {
+            // Here you would implement your text extraction algorithm
+            // This could involve OCR (Optical Character Recognition) libraries or algorithms
+            // For simplicity, let's assume it's a placeholder
+            return "";
+        }
+    </script>
+</body>
+</html>

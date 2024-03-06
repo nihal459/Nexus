@@ -19,6 +19,16 @@ urlpatterns = [
     path('view_user/<int:pk>/', views.view_user, name='view_user'),
     path('exit/<int:pk>/', views.exit, name='exit'),
     path('delete_workspace/<int:pk>/', views.delete_workspace, name='delete_workspace'),
+    path('add_channel', views.add_channel, name='add_channel'),
+    path('send_channel_message', views.send_channel_message, name='send_channel_message'),
+    path('channel_chat/<int:pk>/', views.channel_chat, name='channel_chat'),
+    path('channel_details/<int:pk>/', views.channel_details, name='channel_details'),
+    path('edit_channel/<int:pk>/', views.edit_channel, name='edit_channel'),
+    path('delete_channel/<int:pk>/', views.delete_channel, name='delete_channel'),
+    path('search/', views.search_results, name='search_results'),
+    path('whiteboard/', views.whiteboard, name='whiteboard'),
+
+
 
 
 

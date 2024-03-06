@@ -10,17 +10,41 @@ from django.utils import timezone
 def index(request):
     user = request.user.pk
     workspaces = Workspace.objects.filter(user=user)
+
     members = set()
 
     if workspaces.exists():
+        user_channels = Channel.objects.filter(workspace__in=workspaces)  # Filter channels based on user's workspaces
+
         for workspace in workspaces:
             members |= set(workspace.user.all())
-        context = {'workspace': workspaces, 'members': members}
+        context = {'workspace': workspaces, 'members': members, 'user_channels': user_channels}
         return render(request, 'index.html', context)
     else:
         return render(request, 'index2.html')
     
+from django.db.models import Q
 
+def search_results(request):
+    keyword = request.GET.get('keyword')
+    user = request.user
+
+    # Search for messages containing the keyword
+    user_messages = Message.objects.filter(Q(from_user=user) | Q(to_user=user), message__icontains=keyword)
+
+    # Search for channel messages containing the keyword
+    user_channel_messages = Channel_message.objects.filter(channel__users=user, message__icontains=keyword)
+
+    context = {
+        'user_messages': user_messages,
+        'user_channel_messages': user_channel_messages,
+        'keyword': keyword
+    }
+    return render(request, 'search_results.html', context)
+
+
+def whiteboard(request):
+    return render(request, 'whiteboard.html')
 
 
 
@@ -265,3 +289,162 @@ def delete_workspace(request, pk):
         messages.error(request, 'You are not authorized to delete this workspace.')
 
     return redirect('index') 
+
+
+
+# def add_channel(request):
+#     if request.user.is_authenticated:
+#         user_workspaces = request.user.workspaces.all()
+#         context = {'user_workspaces': user_workspaces}
+#         return render(request, 'add_channel.html', context)
+#     else:
+#         # Handle the case when the user is not authenticated
+#         return render(request, 'add_channel.html')
+    
+
+
+
+from django.shortcuts import render, redirect
+from .models import User, Workspace, Channel
+
+def add_channel(request):
+    if request.user.is_authenticated:
+        if request.method == 'POST':
+            print(request.POST)  # Print out POST data for debugging
+            channel_name = request.POST.get('channel_name')
+            workspace_id = request.POST.get('users')
+            image = request.FILES.get('profile_picture')
+            
+            # Create the channel with the provided data
+            try:
+                workspace = Workspace.objects.get(id=workspace_id)
+            except Workspace.DoesNotExist:
+                print("Workspace does not exist")  # Debugging message
+                return redirect('add_channel')  # Redirect or handle the error as needed
+            
+            channel = Channel.objects.create(
+                channel_name=channel_name,
+                workspace=workspace,
+            )
+            if image:
+                channel.profile_picture = image
+            # Add all users of the selected workspace to the channel
+            users = workspace.user.all()
+            for user in users:
+                channel.users.add(user)
+            
+            channel.save()
+            return redirect('index')  # Redirect to the index page or wherever you want
+        else:
+            user_workspaces = request.user.workspaces.all()
+            context = {'user_workspaces': user_workspaces}
+            return render(request, 'add_channel.html', context)
+    else:
+        # Handle the case when the user is not authenticated
+        return render(request, 'add_channel.html')
+
+
+
+# def channel_chat(request, pk):
+#     # Retrieve the channel object
+#     channel =get_object_or_404(Channel, pk=pk)
+#     # Retrieve all messages related to the channel
+#     messages = Channel.objects.filter(pk=pk)  # Assuming related_name is not defined in the ChannelMessage model
+
+#     context = {
+#         'channel': channel,
+#         'messages':messages,
+#     }
+#     return render(request, 'channel_chat.html', context)
+    
+
+def channel_chat(request, pk):
+    # Retrieve the channel object
+    channel = get_object_or_404(Channel, pk=pk)
+    # Retrieve all messages related to the channel
+    messages = Channel_message.objects.filter(channel=channel)
+    colors = ['#FFFF00', '#008000', '#0000FF', '#8A2BE2', '#FF0000']  # List of colors
+
+    context = {
+        'channel': channel,
+        'messages': messages,
+        'colors':colors,
+    }
+    return render(request, 'channel_chat.html', context)
+
+def send_channel_message(request):
+    if request.method == 'POST':
+        text = request.POST.get('text')
+        file = request.FILES.get('file')
+        channel_id = request.POST.get('channel')
+        channel = get_object_or_404(Channel, pk=channel_id)
+
+        # Check if file is provided
+        if file:
+            # Check file type
+            if file.content_type.startswith('image'):
+                # If it's an image, save it to 'image' field
+                Channel_message.objects.create(
+                    channel=channel,
+                    sender=request.user,
+                    message=text,
+                    image=file
+                )
+            elif file.content_type.startswith('video'):
+                # If it's a video, save it to 'video' field
+                Channel_message.objects.create(
+                    channel=channel,
+                    sender=request.user,
+                    message=text,
+                    video=file
+                )
+            else:
+                # If it's neither image nor video, return bad request
+                return HttpResponseBadRequest("Unsupported file type")
+        else:
+            # If no file is provided, create message without image or video
+            Channel_message.objects.create(
+                channel=channel,
+                sender=request.user,
+                message=text
+            )
+
+    return redirect('channel_chat', pk=channel_id)
+
+
+
+
+
+def channel_details(request,pk):
+    channel = get_object_or_404(Channel, pk=pk)
+    context = {'channel':channel}
+    return render(request, "channel_details.html", context)
+
+
+
+def edit_channel(request, pk):
+    channel = get_object_or_404(Channel, pk=pk)
+
+    if request.method == "POST":
+        channel_name = request.POST.get('channel_name')
+        img = request.FILES.get('img')
+
+        # Update channel details
+        if channel_name:
+            channel.channel_name = channel_name
+        if img:
+            channel.profile_picture = img
+        channel.save()
+        
+    context = {'channel': channel}
+    return render(request, "edit_channel.html", context)
+
+
+
+
+def delete_channel(request, pk):
+    channel = get_object_or_404(Channel, pk=pk)
+
+    channel.delete()
+
+    return redirect('index')

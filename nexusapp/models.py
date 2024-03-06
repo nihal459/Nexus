@@ -41,14 +41,32 @@ class Message(models.Model):
 
 
 class Channel(models.Model):
+    profile_picture = models.ImageField(upload_to='channel_profile_pictures', blank=True, null=True)
     channel_name = models.CharField(max_length=50, default="Channel123")
-    from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='channel_messages')
     users = models.ManyToManyField(User, related_name='Channel_Group', blank=True)  # Many users can be in one workspace
-    message = models.TextField()
-    date = models.DateTimeField(auto_now_add=True)
-    video = models.FileField(upload_to='channel_videos', null=True, blank=True)
-    image = models.ImageField(upload_to='channel_images', null=True, blank=True)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='channels', null=True, blank=True)
 
+
+    @property
+    def imageURL(self):
+        try:
+            url = self.profile_picture.url
+        except:
+            url = ''
+        return url
+    
     def __str__(self):
-        return f"From: {self.from_user}"
+        return f"From: {self.channel_name}"
+
+
+
+class Channel_message(models.Model):
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    video = models.FileField(upload_to='channel_videos', null=True, blank=True)
+    image = models.ImageField(upload_to='channel_images', null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.channel.channel_name}"
